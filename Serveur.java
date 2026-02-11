@@ -5,41 +5,42 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Serveur {
 
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(1415);
-        //Serveur serv = new Serveur(serverSocket);
-        Socket socket;
-        
 
-        while (true)
-            try {
+        try (ServerSocket serverSocket = new ServerSocket(1415)) {
+            Socket socket;
+            
+            while (!serverSocket.isClosed()) {
+
                 socket = serverSocket.accept();
                 System.out.println("\033[38;2;60;130;230m" + "Client connecté " + "\033[38;2;220;220;20m" + socket.toString() + "\033[m");
-                PrintWriter out = new PrintWriter(socket.getOutputStream(),true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                Polichombr jsp = new Polichombr(socket, out, in);
-                jsp.start();
-            } catch (Exception e) {
-                serverSocket.close();
+                try {
+                    PrintWriter out = new PrintWriter(socket.getOutputStream(),true);
+                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                    new Thread(new Polichombr(socket, out, in)).start();
+                } catch (IOException e) {}
             }
+        }
 
         
 
     }
 }
 
-class Polichombr extends Thread {
-    Socket socket;
-    PrintWriter out;
-    BufferedReader in;
-    static ArrayList<Polichombr> liste = new ArrayList<>();
-    boolean stop = false;
-    String username;
-    String color;
+class Polichombr implements Runnable {
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    static final  List<Polichombr> liste = Collections.synchronizedList(new ArrayList<>());
+    private String username;
+    private String color;
 
     public Polichombr(Socket socket, PrintWriter out, BufferedReader in) {
         this.socket = socket;
@@ -55,34 +56,45 @@ class Polichombr extends Thread {
 
     @Override
     public void run() {
-        out.println("Bienvenue " + color + username + "\n");
-        envoi(color);
+        out.println("Bienvenue " + color + username + "\033[m" + "\n");
+        envoi(username + " a rejoint!",false,false);
         String msg;
-        while (!stop) {
-            
-            try {
-                msg = in.readLine();
-                if (msg != null)
-                    envoi(msg);
-                else
-                    fermer();
 
-            } catch (Exception e) {
-                stop = true;
-                e.printStackTrace();
+        try {
+            while ((msg = in.readLine()) != null) {
+            envoi(msg, false, true);
             }
-
+        } catch (IOException e) {
+        } finally {
+            fermer();
         }
+
         fermer();
     }
 
-    public synchronized void envoi(String msg) {
+    /**
+    * Broadcasts a String to all users.
+    * 
+    * @param msg        The String to broadcast
+    * @param toEveryone A boolean, if true the current user will also receive the message.
+    * @param message    A boolean, if true the broadcasted String will be formatted as a message (username : msg)
+    */
+    public void envoi(String msg, boolean toEveryone, boolean message) {
         try {
-            System.out.println(username + " a envoyé un message.");
-            for (Polichombr usr : liste) {
-                
-                if (usr.socket!=socket)
-                    usr.out.println(color + username + " : " + msg);
+
+            if (message) {
+                msg = color + username + " : " + "\033[m" + msg;
+                System.out.println(username + " a envoyé un message.");
+            }
+
+            synchronized (liste) {
+                for (Polichombr usr : liste) {
+                    
+                    if (usr.socket!=socket || toEveryone) {
+                        usr.out.println(msg);
+                    }
+
+                }
             }
         } catch (Exception e) {
             fermer();
@@ -95,8 +107,9 @@ class Polichombr extends Thread {
     }
 
     private void fermer() {
-        stop = true;
-        retirerUser();
+        synchronized (liste) {
+            retirerUser();
+        }
         try {
             if (socket != null)
                 socket.close();
@@ -109,9 +122,5 @@ class Polichombr extends Thread {
         }
     }
 
-    
-    public String toString() {
-        return socket.toString();
-    }
     
 }
