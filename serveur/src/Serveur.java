@@ -57,7 +57,7 @@ class Polichombr implements Runnable {
     @Override
     public void run() {
         out.println("Bienvenue " + color + username + "\033[m" + "\n");
-        envoi(username + " a rejoint!",false,false);
+        envoi("> " + username + " a rejoint!",false,false);
         String msg;
 
         try {
@@ -72,7 +72,6 @@ class Polichombr implements Runnable {
             fermer();
         }
 
-        //fermer();
     }
 
     /**
@@ -110,7 +109,7 @@ class Polichombr implements Runnable {
     }
 
     private void fermer() {
-        envoi(username + " a quitté :(", false, false);
+        envoi("> " + username + " a quitté :(", false, false);
         System.out.println("\033[38;2;220;70;70m" + "- Client déconnecté " + "\033[38;2;220;220;70m" + socket.toString() + "\033[m" + " [" + username + "]");
         synchronized (liste) {
             retirerUser();
@@ -136,11 +135,24 @@ class Polichombr implements Runnable {
             arg = arr[1];
 
         switch (cmd) {
+            case "help" :
+                commandHelp();
+                break;
+
             case "color":
                 color = commandColor(arg);
                 break;
+
+            case "nick" :
+                username = commandNick(arg);
+                break;
+
+            case "msg" :
+                commandMsg(arg);
+                break;
         
             default:
+                out.println("\033[4m" + "Unknown command : type \"/help\" to see available commands." + "\033[m");
                 break;
         }
     }
@@ -204,9 +216,35 @@ class Polichombr implements Runnable {
         } 
         catch (Exception e) 
         {
-            out.println("Bad command format. Do \"/color help\" to see usage.");
+            out.println("Bad command format. Type \"/color help\" to see usage.");
             return color;
         }
+    }
+
+    private void commandHelp() {
+        out.println("\033[4m" + "Available commands :" + "\033[m" +
+            "\n\t/help                     → to see this" +
+            "\n\t/color <arg>              → to change your color, type \"/color help\" to see available arguments" +
+            "\n\t/nick <newUsername>       → to change your username" +
+            "\n\t/msg <username> <message> → to send a private message to another user"
+        );
+    }
+
+    private String commandNick(String arg) {
+        try {
+            if (arg.length()>1){
+                out.println("Nouveau nom : " + color + arg + "\033[m");
+                envoi("> " + username + " s'appelle maintenant " + arg, false, false);
+                System.out.println(username + " s'appelle maintenant " + arg);
+                return arg;
+            }
+        } catch (Exception e) {}
+        out.println("Bad command format. Usage is \"/nick <username>\"");
+        return username;
+    }
+
+    private void commandMsg(String str) {
+
     }
     
 }
