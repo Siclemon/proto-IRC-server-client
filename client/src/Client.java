@@ -36,9 +36,9 @@ public class Client {
     public static void main(String[] args) {
         try {
             Scanner sc = new Scanner(System.in);
-            System.out.print("Adresse IP : ");
-            String ip = sc.nextLine();
-            Socket socket = new Socket(ip, 1415);
+            //System.out.print("Adresse IP : ");
+            //String ip = sc.nextLine();
+            Socket socket = new Socket("172.20.34.11", 1415);
             System.out.print("Pseudo : ");
             String nom = sc.nextLine();
             Client client = new Client(socket,nom);

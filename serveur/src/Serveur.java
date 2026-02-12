@@ -130,15 +130,14 @@ class Polichombr implements Runnable {
     private void command(String msg) {
         msg = msg.substring(1);
         String[] arr = msg.split(" ", 2);
-        String cmd = msg.split(" ", 2)[0];
+        String cmd = arr[0];
         String arg = null;
         if (arr.length>1)
-            arg = msg.split(" ", 2)[1];
+            arg = arr[1];
 
         switch (cmd) {
             case "color":
-                color = parseColor(arg);
-                out.println(color + "Nouvelle couleur" + "\033[m");
+                color = commandColor(arg);
                 break;
         
             default:
@@ -165,31 +164,48 @@ class Polichombr implements Runnable {
         throw new IllegalArgumentException();
     }
 
-    private String parseColor(String arg) 
+    private String commandColor(String arg) 
     {
         try 
         {
 
-            if (arg.trim().equals("random"))
-                return color();
+            if (arg.trim().equals("random")){
+                String newColor = color();
+                out.println(newColor + "Nouvelle couleur" + "\033[m");
+                return newColor;
+            }
             else if (arg.trim().equals("info")) {
-                out.println();
+                String colorCode = color.substring(7,color.length()-1);
+                colorCode = colorCode.split(";")[0] + " " + colorCode.split(";")[1] + " " + colorCode.split(";")[2];
+                colorCode = color + "Your color : " + "\033[m" + colorCode;
+                out.println(colorCode);
+                return color;
+            } else if (arg.trim().equals("help")) {
+                out.println("\033[4m" + "Usage :" + "\033[m" +
+                                    " /color help   → to see this\n" +
+                            "               info   → to get the RGB values of your current color\n" + 
+                            "               random → to get a new random color\n" +
+                            "               r g b  → to choose a new color (with r, g and b between 0 and 255)"
+                            );
                 return color;
             }
             else {
-                int r = Integer.parseInt(arg.split(" ")[0]);
-                int g = Integer.parseInt(arg.split(" ")[1]);
-                int b = Integer.parseInt(arg.split(" ")[2]);
+                String[] rgb = arg.split(" ");
+                int r = Integer.parseInt(rgb[0]);
+                int g = Integer.parseInt(rgb[1]);
+                int b = Integer.parseInt(rgb[2]);
                 is_color(r);
                 is_color(g);
                 is_color(b);
-                return color(r, g, b);
+                String newColor = color(r, g, b);
+                out.println(newColor + "Nouvelle couleur" + "\033[m");
+                return newColor;
             }
         } 
         catch (Exception e) 
         {
-            out.println("Bad color format. usage example: \"/color 0 255 120\" \n\twhere r g and b are >= 0 and <= 255");
-            return color();
+            out.println("Bad command format. Do \"/color help\" to see usage.");
+            return color;
         }
     }
     
