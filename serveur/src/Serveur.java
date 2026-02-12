@@ -1,3 +1,4 @@
+package serveur.src;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -7,6 +8,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 public class Serveur {
 
@@ -18,7 +20,7 @@ public class Serveur {
             while (!serverSocket.isClosed()) {
 
                 socket = serverSocket.accept();
-                System.out.println("\033[38;2;60;130;230m" + "Client connecté " + "\033[38;2;220;220;20m" + socket.toString() + "\033[m");
+                System.out.println("\033[38;2;60;130;230m" + "+ Client connecté " + "\033[38;2;220;220;70m" + socket.toString() + "\033[m");
 
                 try {
                     PrintWriter out = new PrintWriter(socket.getOutputStream(),true);
@@ -28,8 +30,6 @@ public class Serveur {
                 } catch (IOException e) {}
             }
         }
-
-        
 
     }
 }
@@ -62,14 +62,17 @@ class Polichombr implements Runnable {
 
         try {
             while ((msg = in.readLine()) != null) {
-            envoi(msg, false, true);
+                if (msg.startsWith("/") && msg.length()>1)
+                    command(msg);
+                else
+                    envoi(msg, false, true);
             }
         } catch (IOException e) {
         } finally {
             fermer();
         }
 
-        fermer();
+        //fermer();
     }
 
     /**
@@ -107,6 +110,8 @@ class Polichombr implements Runnable {
     }
 
     private void fermer() {
+        envoi(username + " a quitté :(", false, false);
+        System.out.println("\033[38;2;220;70;70m" + "- Client déconnecté " + "\033[38;2;220;220;70m" + socket.toString() + "\033[m" + " [" + username + "]");
         synchronized (liste) {
             retirerUser();
         }
@@ -122,5 +127,70 @@ class Polichombr implements Runnable {
         }
     }
 
+    private void command(String msg) {
+        msg = msg.substring(1);
+        String[] arr = msg.split(" ", 2);
+        String cmd = msg.split(" ", 2)[0];
+        String arg = null;
+        if (arr.length>1)
+            arg = msg.split(" ", 2)[1];
+
+        switch (cmd) {
+            case "color":
+                color = parseColor(arg);
+                out.println(color + "Nouvelle couleur" + "\033[m");
+                break;
+        
+            default:
+                break;
+        }
+    }
+
+    private String color() {
+        Random rng = new Random();
+        color = "\033[38;2;" + rng.nextInt(70,256) + ";" + rng.nextInt(70,256) + ";" + rng.nextInt(70,256) + "m";
+        return color;
+    }
+
+    private String color(int r, int g, int b) {
+        color = "\033[38;2;" + r + ";" + g + ";" + b + "m";
+        return color;
+    }
+
+
+    private Boolean is_color(int color) throws IllegalArgumentException
+    {
+        if ( 0 <= color && color <= 255)
+            return (true);
+        throw new IllegalArgumentException();
+    }
+
+    private String parseColor(String arg) 
+    {
+        try 
+        {
+
+            if (arg.trim().equals("random"))
+                return color();
+            else if (arg.trim().equals("info")) {
+                out.println();
+                return color;
+            }
+            else {
+                int r = Integer.parseInt(arg.split(" ")[0]);
+                int g = Integer.parseInt(arg.split(" ")[1]);
+                int b = Integer.parseInt(arg.split(" ")[2]);
+                is_color(r);
+                is_color(g);
+                is_color(b);
+                return color(r, g, b);
+            }
+        } 
+        catch (Exception e) 
+        {
+            out.println("Bad color format. usage example: \"/color 0 255 120\" \n\twhere r g and b are >= 0 and <= 255");
+            return color();
+        }
+    }
     
 }
