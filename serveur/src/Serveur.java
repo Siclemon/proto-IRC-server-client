@@ -129,7 +129,7 @@ class Polichombr implements Runnable {
     private void command(String msg) {
         msg = msg.substring(1);
         String[] arr = msg.split(" ", 2);
-        String cmd = arr[0];
+        String cmd = arr[0].toLowerCase();
         String arg = null;
         if (arr.length>1)
             arg = arr[1];
@@ -244,7 +244,28 @@ class Polichombr implements Runnable {
     }
 
     private void commandMsg(String str) {
+        try {
+            String[] arr = str.split(" ", 2);
+            String target = arr[0];
+            String msg = arr[1];
+            privateMessage(target, msg);
+        } catch (Exception e) {
+            out.print("Bad command format. Usage is \"/msg <username> <message>\"");
+        }
+    }
 
+    private void privateMessage(String target, String msg) throws IllegalArgumentException {
+        synchronized (liste) {
+                for (Polichombr usr : liste) {
+                    
+                    if (usr.username.toLowerCase().equals(target.toLowerCase())) {
+                        usr.out.println("\033[3m" + color + username + " → " + "\033[m" + msg);
+                        return;
+                    }
+
+                }
+                throw new IllegalArgumentException();
+            }
     }
     
 }
