@@ -40,7 +40,7 @@ public class Client {
             //String ip = sc.nextLine();
             Socket socket = new Socket("172.20.34.11", 1415);
             System.out.print("Pseudo : ");
-            String nom = sc.nextLine();
+            String nom = sc.nextLine().replace(" ", "-");
             Client client = new Client(socket,nom);
             client.ecoute();
             client.ecrire();
@@ -56,6 +56,10 @@ public class Client {
         while (!socket.isClosed()) {
             try {
                 msg = sc.nextLine();
+                if (msg.toLowerCase().trim().equals("/quit")) {
+                    System.out.println("\nAu revoir !!");
+                    fermer();
+                }
                 out.println(msg);
             } catch (Exception e) {
                 break;
@@ -70,7 +74,6 @@ public class Client {
                 String msg;
                 while (!socket.isClosed()) {
                     try {
-                        //msg = in.readLine();
                         if ((msg = in.readLine()) != null)
                             System.out.println(msg);
                     } catch (IOException e) {

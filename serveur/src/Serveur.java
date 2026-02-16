@@ -47,7 +47,7 @@ class Polichombr implements Runnable {
         this.out = out;
         this.in = in;
         try {
-            username = in.readLine();
+            username = in.readLine().replaceAll("[^A-zÀ-ú0-9']+", "-");
             color = in.readLine();
         } catch (IOException e) {
         }
@@ -56,7 +56,8 @@ class Polichombr implements Runnable {
 
     @Override
     public void run() {
-        out.println("Bienvenue " + color + username + "\033[m" + "\n");
+        out.println("\nBienvenue " + color + username + "\033[m");
+        out.println("\033[3;2m" + "Faites \"/help\" pour voir les commandes disponibles." + "\033[m" + "\n");
         envoi("> " + username + " a rejoint!",false,false);
         String msg;
 
@@ -137,18 +138,26 @@ class Polichombr implements Runnable {
         switch (cmd) {
             case "help" :
                 commandHelp();
+                out.println();
                 break;
 
             case "color":
                 color = commandColor(arg);
+                out.println();
                 break;
 
             case "nick" :
-                username = commandNick(arg);
+                username = commandNick(arg.replaceAll("[^A-zÀ-ú0-9']+", "-"));
+                out.println();
                 break;
 
             case "msg" :
                 commandMsg(arg);
+                break;
+
+            case "list" :
+                commandList();
+                out.println();
                 break;
         
             default:
@@ -226,7 +235,9 @@ class Polichombr implements Runnable {
             "\n\t/help                     → to see this" +
             "\n\t/color <arg>              → to change your color, type \"/color help\" to see available arguments" +
             "\n\t/nick <newUsername>       → to change your username" +
-            "\n\t/msg <username> <message> → to send a private message to another user"
+            "\n\t/msg <username> <message> → to send a private message to another user" +
+            "\n\t/list                     → to see the list of all connected users" +
+            "\n\t/quit                     → to leave the chat"
         );
     }
 
@@ -249,23 +260,30 @@ class Polichombr implements Runnable {
             String target = arr[0];
             String msg = arr[1];
             privateMessage(target, msg);
-        } catch (Exception e) {
-            out.print("Bad command format. Usage is \"/msg <username> <message>\"");
-        }
+            return;
+        } catch (Exception e) {}
+        out.println("Bad command format. Usage is \"/msg <username> <message>\"");
+        
     }
 
-    private void privateMessage(String target, String msg) throws IllegalArgumentException {
+    private void privateMessage(String target, String msg) {
         synchronized (liste) {
                 for (Polichombr usr : liste) {
-                    
                     if (usr.username.toLowerCase().equals(target.toLowerCase())) {
-                        usr.out.println("\033[3m" + color + username + " → " + "\033[m" + msg);
+                        usr.out.println("\033[3m" + color + username + " : " + "\033[39m" + msg + "\033[m");
+                        System.out.println("Un message privé a été envoyé.");
                         return;
                     }
-
                 }
-                throw new IllegalArgumentException();
+                out.println("User not found. Type \"/list\" to see all connected users");
             }
+    }
+
+    private void commandList() {
+        out.println("\033[4m" + "Liste des utilisateur·ices :" + "\033[m");
+        for (Polichombr user : liste) {
+            out.println("- " + user.color + user.username + "\033[m");
+        }
     }
     
 }
